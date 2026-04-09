@@ -6,18 +6,26 @@ function generateCode() {
 }
 
 export default async function handler(req, res) {
-  const { email } = req.body;
+  try {
+    const { email } = req.body;
+    if (!email) throw new Error("Email required");
 
-  const code = generateCode();
-  const expires = Date.now() + 5 * 60 * 1000;
+    const code = generateCode();
+    const expires = Date.now() + 5 * 60 * 1000;
 
-  await query("INSERT INTO auth_codes VALUES (?, ?, ?)", [
-    email,
-    code,
-    expires,
-  ]);
+    await query("INSERT INTO auth_codes VALUES (?, ?, ?)", [
+      email,
+      code,
+      expires,
+    ]);
 
-  await sendCode(email, code);
+    await sendCode(email, code);
 
-  res.json({ ok: true });
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true }));
+  } catch (err) {
+    console.error(err);
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: err.message }));
+  }
 }
