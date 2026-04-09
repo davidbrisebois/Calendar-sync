@@ -7,7 +7,7 @@ function app() {
     calendarId: '',
 
     async requestCode() {
-      await fetch('/auth/request', {
+      await fetch('/api/auth/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: this.email })
@@ -15,7 +15,7 @@ function app() {
     },
 
     async login() {
-      const res = await fetch('/auth/verify', {
+      const res = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: this.email, code: this.code })
@@ -28,7 +28,7 @@ function app() {
     },
 
     async loadConfig() {
-      const res = await fetch('/config', {
+      const res = await fetch('/api/config', {
         headers: { Authorization: this.token }
       });
       const cfg = await res.json();
@@ -37,7 +37,7 @@ function app() {
     },
 
     async save() {
-      await fetch('/config', {
+      await fetch('/api/config', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ function app() {
     },
 
     async sync() {
-      await fetch('/sync', {
+      await fetch('/api/sync', {
         method: 'POST',
         headers: { Authorization: this.token }
       });
