@@ -1,3 +1,5 @@
+import { db } from "../lib/db.js";
+
 export default async function handler(req, res) {
   try {
     await db.execute(`
