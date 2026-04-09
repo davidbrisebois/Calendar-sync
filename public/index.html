@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://unpkg.com/alpinejs" defer></script>
+</head>
+<body x-data="app()">
+
+<div x-show="!token">
+  <h2>Login</h2>
+  <input x-model="email" placeholder="email">
+  <button @click="requestCode()">Send code</button>
+
+  <input x-model="code" placeholder="code">
+  <button @click="login()">Login</button>
+</div>
+
+<div x-show="token">
+  <h2>Config</h2>
+
+  <input x-model="icsUrl" placeholder="ICS URL">
+  <input x-model="calendarId" placeholder="Calendar ID">
+
+  <button @click="save()">Save</button>
+  <button @click="sync()">Sync now</button>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
