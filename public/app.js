@@ -1,5 +1,37 @@
 function app() {
+  const dictionaries = {
+    fr: {
+      code_sent: "Code envoyé par courriel.",
+      logged_in: "Connecté.",
+      office_connected: "Compte Office connecté.",
+      office_error: "Erreur pendant la connexion Office 365.",
+      db_not_configured: "Base non configurée. Définissez DATABASE_URL ou TURSO_DATABASE_URL.",
+      db_unreachable: "Impossible de joindre la base.",
+      db_missing_tables: "Base accessible mais tables manquantes. Lancez l'initialisation.",
+      init_done: "Initialisation terminée.",
+      config_saved: "Configuration sauvegardée.",
+      sync_done: "Synchronisation terminée.",
+      connect_office_first: "Connectez d'abord Office 365.",
+      syncing: "Synchronisation en cours...",
+    },
+    en: {
+      code_sent: "Code sent by email.",
+      logged_in: "Logged in.",
+      office_connected: "Office account connected.",
+      office_error: "Error during Office 365 connection.",
+      db_not_configured: "Database not configured. Set DATABASE_URL or TURSO_DATABASE_URL.",
+      db_unreachable: "Unable to reach database.",
+      db_missing_tables: "Database reachable but tables are missing. Run initialization.",
+      init_done: "Initialization completed.",
+      config_saved: "Config saved.",
+      sync_done: "Sync completed.",
+      connect_office_first: "Please connect Office 365 first.",
+      syncing: "Sync in progress...",
+    },
+  };
+
   return {
+    lang: localStorage.getItem("lang") || "fr",
     email: "",
     code: "",
     codeSent: false,
@@ -14,6 +46,27 @@ function app() {
     missingTables: [],
     officeConnected: false,
     calendars: [],
+    isSyncing: false,
+    syncProgress: 0,
+
+    t(key) {
+      return dictionaries[this.lang]?.[key] || key;
+    },
+
+    setLang(nextLang) {
+      this.lang = nextLang;
+      localStorage.setItem("lang", nextLang);
+    },
+
+    logout() {
+      this.token = "";
+      this.code = "";
+      this.codeSent = false;
+      this.officeConnected = false;
+      this.calendars = [];
+      localStorage.removeItem("token");
+      this.message = "";
+    },
 
     async parseResponse(res) {
       const raw = await res.text();
@@ -63,7 +116,7 @@ function app() {
         if (exchangeData.error) {
           this.message = exchangeData.error;
         } else {
-          this.message = "Compte Office connecté.";
+          this.message = this.t("office_connected");
           await this.loadCalendars();
         }
 
@@ -78,14 +131,10 @@ function app() {
       }
 
       if (graphStatus === "connected") {
-        this.message = "Compte Office connecté.";
-        params.delete("graph");
-        const nextQuery = params.toString();
-        const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`;
-        window.history.replaceState({}, "", nextUrl);
+        this.message = this.t("office_connected");
       }
       if (graphStatus === "error") {
-        this.message = "Erreur pendant la connexion Office 365.";
+        this.message = this.t("office_error");
       }
     },
 
@@ -98,7 +147,7 @@ function app() {
         if (!data.configured) {
           this.showQuickLaunch = true;
           this.setupReady = false;
-          this.setupMessage = "Database non configurée. Définissez DATABASE_URL ou TURSO_DATABASE_URL.";
+          this.setupMessage = this.t("db_not_configured");
           this.missingTables = [];
           return;
         }
@@ -106,7 +155,7 @@ function app() {
         if (!data.reachable) {
           this.showQuickLaunch = true;
           this.setupReady = false;
-          this.setupMessage = data.error || "Impossible de joindre la base.";
+          this.setupMessage = data.error || this.t("db_unreachable");
           this.missingTables = [];
           return;
         }
@@ -116,7 +165,7 @@ function app() {
         this.setupReady = true;
 
         if (this.showQuickLaunch) {
-          this.setupMessage = "Base accessible mais tables manquantes. Lancez l'initialisation.";
+          this.setupMessage = this.t("db_missing_tables");
         }
       } catch (err) {
         this.showQuickLaunch = true;
@@ -136,7 +185,7 @@ function app() {
           return;
         }
 
-        this.setupMessage = "Initialisation terminée.";
+        this.setupMessage = this.t("init_done");
         await this.checkSetupStatus();
       } catch (err) {
         this.setupMessage = err.message;
@@ -155,7 +204,7 @@ function app() {
         if (data.error) this.message = data.error;
         else {
           this.codeSent = true;
-          this.message = "Code sent to your email";
+          this.message = this.t("code_sent");
         }
       } catch (err) {
         this.message = err.message;
@@ -175,7 +224,7 @@ function app() {
         else {
           this.token = data.token;
           localStorage.setItem("token", data.token);
-          this.message = "Logged in!";
+          this.message = this.t("logged_in");
           this.codeSent = false;
           await this.loadConfig();
         }
@@ -251,7 +300,7 @@ function app() {
       this.message = "";
       try {
         if (!this.officeConnected) {
-          this.message = "Connectez d'abord Office 365.";
+          this.message = this.t("connect_office_first");
           return;
         }
 
@@ -269,23 +318,42 @@ function app() {
         });
         const data = await this.parseResponse(res);
         if (data.error) this.message = data.error;
-        else this.message = "Config saved!";
+        else this.message = this.t("config_saved");
       } catch (err) {
         this.message = err.message;
       }
     },
 
     async syncNow() {
-      this.message = "";
+      this.message = this.t("syncing");
+      this.isSyncing = true;
+      this.syncProgress = 5;
+
+      const timer = setInterval(() => {
+        if (this.syncProgress < 90) this.syncProgress += 5;
+      }, 250);
+
       try {
         const res = await fetch("/api/sync", {
           headers: { Authorization: this.token },
         });
         const data = await this.parseResponse(res);
+        clearInterval(timer);
+        this.syncProgress = 100;
+
         if (data.error) this.message = data.error;
-        else this.message = "Sync completed!";
+        else {
+          const stats = data.stats || {};
+          this.message = `${this.t("sync_done")} (${stats.processed || 0}/${stats.total || 0})`;
+        }
       } catch (err) {
+        clearInterval(timer);
         this.message = err.message;
+      } finally {
+        this.isSyncing = false;
+        setTimeout(() => {
+          this.syncProgress = 0;
+        }, 500);
       }
     },
   };

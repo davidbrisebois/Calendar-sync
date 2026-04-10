@@ -23,10 +23,10 @@ export default async function handler(req, res) {
       return res.end(JSON.stringify({ error: "No config found" }));
     }
 
-    await syncUser(config);
+    const stats = await syncUser(config);
 
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ ok: true }));
+    res.end(JSON.stringify({ ok: true, stats }));
   } catch (err) {
     console.error(err);
     res.writeHead(500, { "Content-Type": "application/json" });
