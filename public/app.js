@@ -5,6 +5,8 @@ function app() {
       logged_in: "Connecté.",
       office_connected: "Compte Office connecté.",
       office_error: "Erreur pendant la connexion Office 365.",
+      office_disconnected: "Compte Office déconnecté.",
+      account_deleted: "Compte supprimé.",
       db_not_configured: "Base non configurée. Définissez DATABASE_URL ou TURSO_DATABASE_URL.",
       db_unreachable: "Impossible de joindre la base.",
       db_missing_tables: "Base accessible mais tables manquantes. Lancez l'initialisation.",
@@ -19,6 +21,8 @@ function app() {
       logged_in: "Logged in.",
       office_connected: "Office account connected.",
       office_error: "Error during Office 365 connection.",
+      office_disconnected: "Office account disconnected.",
+      account_deleted: "Account deleted.",
       db_not_configured: "Database not configured. Set DATABASE_URL or TURSO_DATABASE_URL.",
       db_unreachable: "Unable to reach database.",
       db_missing_tables: "Database reachable but tables are missing. Run initialization.",
@@ -45,6 +49,7 @@ function app() {
     showQuickLaunch: true,
     missingTables: [],
     officeConnected: false,
+    officeLoading: false,
     calendars: [],
     isSyncing: false,
     syncProgress: 0,
@@ -63,6 +68,7 @@ function app() {
       this.code = "";
       this.codeSent = false;
       this.officeConnected = false;
+      this.officeLoading = false;
       this.calendars = [];
       localStorage.removeItem("token");
       this.message = "";
@@ -105,11 +111,7 @@ function app() {
             "Content-Type": "application/json",
             Authorization: this.token,
           },
-          body: JSON.stringify({
-            action: "exchange",
-            code: oauthCode,
-            state: oauthState,
-          }),
+          body: JSON.stringify({ action: "exchange", code: oauthCode, state: oauthState }),
         });
         const exchangeData = await this.parseResponse(exchangeRes);
 
@@ -130,12 +132,8 @@ function app() {
         window.history.replaceState({}, "", nextUrl);
       }
 
-      if (graphStatus === "connected") {
-        this.message = this.t("office_connected");
-      }
-      if (graphStatus === "error") {
-        this.message = this.t("office_error");
-      }
+      if (graphStatus === "connected") this.message = this.t("office_connected");
+      if (graphStatus === "error") this.message = this.t("office_error");
     },
 
     async checkSetupStatus() {
@@ -163,10 +161,7 @@ function app() {
         this.missingTables = data.missingTables || [];
         this.showQuickLaunch = !data.initialized;
         this.setupReady = true;
-
-        if (this.showQuickLaunch) {
-          this.setupMessage = this.t("db_missing_tables");
-        }
+        if (this.showQuickLaunch) this.setupMessage = this.t("db_missing_tables");
       } catch (err) {
         this.showQuickLaunch = true;
         this.setupReady = false;
@@ -179,7 +174,6 @@ function app() {
       try {
         const res = await fetch("/api/setup", { method: "POST" });
         const data = await this.parseResponse(res);
-
         if (data.error) {
           this.setupMessage = data.error;
           return;
@@ -245,14 +239,64 @@ function app() {
           this.message = data.error;
           return;
         }
-
         window.location.href = data.authUrl;
       } catch (err) {
         this.message = err.message;
       }
     },
 
+    async disconnectOffice() {
+      this.message = "";
+      try {
+        const res = await fetch("/api/graph", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: this.token,
+          },
+          body: JSON.stringify({ action: "disconnect" }),
+        });
+        const data = await this.parseResponse(res);
+        if (data.error) {
+          this.message = data.error;
+          return;
+        }
+
+        this.officeConnected = false;
+        this.officeLoading = false;
+        this.calendars = [];
+        this.targetCalendarId = "";
+        this.message = this.t("office_disconnected");
+      } catch (err) {
+        this.message = err.message;
+      }
+    },
+
+    async deleteAccount() {
+      const ok = window.confirm(this.lang === "fr" ? "Supprimer définitivement votre compte ?" : "Delete your account permanently?");
+      if (!ok) return;
+
+      this.message = "";
+      try {
+        const res = await fetch("/api/user", {
+          method: "DELETE",
+          headers: { Authorization: this.token },
+        });
+        const data = await this.parseResponse(res);
+        if (data.error) {
+          this.message = data.error;
+          return;
+        }
+
+        this.logout();
+        this.message = this.t("account_deleted");
+      } catch (err) {
+        this.message = err.message;
+      }
+    },
+
     async loadCalendars() {
+      this.officeLoading = true;
       const res = await fetch("/api/graph?mode=calendars", {
         headers: { Authorization: this.token },
       });
@@ -260,6 +304,7 @@ function app() {
 
       if (data.error) {
         this.officeConnected = false;
+        this.officeLoading = false;
         this.calendars = [];
         return;
       }
@@ -268,7 +313,7 @@ function app() {
       this.calendars = data.calendars || [];
 
       if (this.targetCalendarId) {
-        const exists = this.calendars.some((cal) => cal.id === this.targetCalendarId);
+        const exists = this.calendars.some((cal) => String(cal.id) === String(this.targetCalendarId));
         if (!exists && this.calendars.length) {
           this.targetCalendarId = this.calendars[0].id;
         }
@@ -277,10 +322,13 @@ function app() {
       if (!this.targetCalendarId && this.calendars.length) {
         this.targetCalendarId = this.calendars[0].id;
       }
+
+      this.officeLoading = false;
     },
 
     async loadConfig() {
       this.message = "";
+      this.officeLoading = true;
       try {
         const res = await fetch("/api/config", {
           headers: { Authorization: this.token },
@@ -292,6 +340,7 @@ function app() {
 
         await this.loadCalendars();
       } catch (err) {
+        this.officeLoading = false;
         this.message = err.message;
       }
     },
