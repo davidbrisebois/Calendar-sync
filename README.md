@@ -79,3 +79,14 @@ Les tokens sont stockés avec refresh token pour prolonger la validité en sync 
 > Deux options supportées:
 > - `https://.../api/graph/callback` (callback backend direct)
 > - `https://.../` (retour frontend, échange du `code` via `POST /api/graph` avec `action: "exchange"`)
+
+
+## Sync ICS -> Graph (état actuel)
+
+- `Sync now` et `cron` exécutent désormais une synchronisation effective vers Microsoft Graph:
+  - création d'événements absents
+  - mise à jour si l'événement ICS a changé
+  - suppression côté destination si l'événement n'existe plus dans l'ICS
+- Le mapping `events_mapping` est utilisé pour associer `icsUid` <-> `graphEventId`.
+
+> Note: la gestion avancée de récurrence Graph n'est pas encore complète (les champs de base date/heure/description/location sont synchronisés).
