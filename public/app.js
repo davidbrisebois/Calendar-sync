@@ -304,35 +304,43 @@ function app() {
 
     async loadCalendars() {
       this.officeLoading = true;
-      const res = await fetch("/api/graph?mode=calendars", {
-        headers: { Authorization: this.token },
-      });
-      const data = await this.parseResponse(res);
+      try {
+        const res = await fetch("/api/graph?mode=calendars", {
+          headers: { Authorization: this.token },
+        });
+        const data = await this.parseResponse(res);
 
-      if (data.error) {
-        this.officeConnected = false;
-        this.officeLoading = false;
-        this.calendars = [];
-        return;
-      }
-
-      this.officeConnected = true;
-      this.calendars = data.calendars || [];
-
-      const preferredId = this.configuredTargetCalendarId || this.targetCalendarId;
-      if (preferredId) {
-        const match = this.calendars.find((cal) => String(cal.id) === String(preferredId));
-        if (match) {
-          this.targetCalendarId = match.id;
-        } else if (this.calendars.length) {
-          this.targetCalendarId = this.calendars[0].id;
+        if (data.error) {
+          this.officeConnected = false;
+          this.calendars = [];
+          return;
         }
-      } else if (this.calendars.length) {
-        this.targetCalendarId = this.calendars[0].id;
-      }
 
-      this.configuredTargetCalendarId = "";
-      this.officeLoading = false;
+        this.officeConnected = true;
+        this.calendars = (data.calendars || []).map((cal) => ({
+          ...cal,
+          id: String(cal.id),
+        }));
+
+        const preferredId = String(this.configuredTargetCalendarId || this.targetCalendarId || "");
+        const hasPreferred = preferredId && this.calendars.some((cal) => cal.id === preferredId);
+        this.targetCalendarId = hasPreferred
+          ? preferredId
+          : this.calendars.length
+            ? this.calendars[0].id
+            : "";
+
+        this.configuredTargetCalendarId = "";
+        this.$nextTick(() => {
+          this.targetCalendarId = String(this.targetCalendarId || "");
+        });
+      } catch (err) {
+        this.officeConnected = false;
+        this.calendars = [];
+        this.message = err.message;
+      } finally {
+        this.officeLoading = false;
+      }
     },
 
     async loadConfig() {
@@ -344,7 +352,7 @@ function app() {
         });
         const data = await this.parseResponse(res);
         this.icsUrl = data.icsUrl || "";
-        this.configuredTargetCalendarId = data.targetCalendarId || "";
+        this.configuredTargetCalendarId = data.targetCalendarId ? String(data.targetCalendarId) : "";
         this.targetCalendarId = this.configuredTargetCalendarId;
         this.titlePrefix = data.titlePrefix || "";
 
