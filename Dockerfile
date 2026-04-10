@@ -17,4 +17,4 @@ ENV PORT=3000
 
 EXPOSE 3000
 
-ENTRYPOINT ["/app/scripts/entrypoint.sh"]
+ENTRYPOINT ["/scripts/entrypoint.sh"]
