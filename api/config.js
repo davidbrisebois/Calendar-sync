@@ -1,4 +1,5 @@
-import { query } from "../lib/db.js";
+import { eq } from "drizzle-orm";
+import { db, schema } from "../lib/db.js";
 import { verify } from "../lib/jwt.js";
 
 export default async function handler(req, res) {
@@ -11,21 +12,27 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "GET") {
-      const result = await query("SELECT * FROM configs WHERE userId=?", [
-        user.id,
-      ]);
+      const [config] = await db
+        .select()
+        .from(schema.configs)
+        .where(eq(schema.configs.userId, user.id))
+        .limit(1);
+
       res.writeHead(200, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify(result.rows[0] || {}));
+      return res.end(JSON.stringify(config || {}));
     }
 
     if (req.method === "POST") {
-      const { icsUrl, targetCalendarId } = req.body;
-      await query("DELETE FROM configs WHERE userId=?", [user.id]);
-      await query("INSERT INTO configs VALUES (?, ?, ?)", [
-        user.id,
+      const { icsUrl, targetCalendarId, titlePrefix = "" } = req.body;
+
+      await db.delete(schema.configs).where(eq(schema.configs.userId, user.id));
+      await db.insert(schema.configs).values({
+        userId: user.id,
         icsUrl,
         targetCalendarId,
-      ]);
+        titlePrefix,
+      });
+
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ ok: true }));
     }

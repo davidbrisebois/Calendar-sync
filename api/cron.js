@@ -1,12 +1,12 @@
-import { query } from "../lib/db.js";
+import { db, schema } from "../lib/db.js";
 import { syncUser } from "../lib/sync.js";
 
 export default async function handler(req, res) {
   try {
-    const configs = await query("SELECT * FROM configs");
+    const allConfigs = await db.select().from(schema.configs);
 
-    for (const cfg of configs.rows) {
-      await syncUser(cfg);
+    for (const config of allConfigs) {
+      await syncUser(config);
     }
 
     res.writeHead(200, { "Content-Type": "application/json" });
