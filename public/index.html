@@ -2,33 +2,82 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calendar Sync</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
-<body x-data="app()" class="p-4">
+<body class="bg-slate-50 min-h-screen text-slate-800">
+  <div x-data="app()" x-init="boot()" class="max-w-2xl mx-auto p-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h1 class="text-2xl font-semibold mb-4">Calendar Sync</h1>
 
-  <h1>Calendar Sync</h1>
+      <!-- QUICKLAUNCH -->
+      <div x-show="showQuickLaunch" class="mb-4 space-y-3">
+        <h2 class="text-lg font-medium">Quicklaunch: initialisation de la base</h2>
+        <p x-text="setupMessage" class="text-sm text-red-600"></p>
 
-  <!-- LOGIN -->
-  <div x-show="!token" class="mb-4">
-    <input x-model="email" placeholder="Email" type="email" class="p-1 mb-2"/>
-    <button @click="requestCode()" class="p-1 mb-2">Send Code</button>
-    <br/>
-    <input x-model="code" placeholder="Code" class="p-1 mb-2"/>
-    <button @click="login()" class="p-1 mb-2">Login</button>
-    <div x-text="message" class="text-red-500"></div>
+        <template x-if="missingTables.length">
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+            <p class="font-medium mb-1">Tables manquantes:</p>
+            <ul class="list-disc ml-5">
+              <template x-for="table in missingTables" :key="table">
+                <li x-text="table"></li>
+              </template>
+            </ul>
+          </div>
+        </template>
+
+        <div class="flex gap-2">
+          <button @click="initializeDatabase()" :disabled="!setupReady" class="px-3 py-2 rounded-lg bg-slate-900 text-white disabled:opacity-50">Initialiser les tables</button>
+          <button @click="checkSetupStatus()" class="px-3 py-2 rounded-lg border border-slate-300 bg-white">Rafraîchir statut</button>
+        </div>
+      </div>
+
+      <!-- LOGIN -->
+      <div x-show="!showQuickLaunch && !token" class="space-y-3">
+        <h2 class="text-lg font-medium">Connexion</h2>
+        <input x-model="email" placeholder="Email" type="email" class="w-full px-3 py-2 rounded-lg border border-slate-300"/>
+        <button @click="requestCode()" class="px-3 py-2 rounded-lg bg-slate-900 text-white">Send code</button>
+
+        <div x-show="codeSent" class="space-y-3">
+          <input x-model="code" placeholder="Code" class="w-full px-3 py-2 rounded-lg border border-slate-300"/>
+          <button @click="login()" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Login</button>
+        </div>
+
+        <div x-text="message" class="text-sm text-red-600"></div>
+      </div>
+
+      <!-- CONFIGURATION -->
+      <div x-show="!showQuickLaunch && token" class="space-y-3">
+        <h2 class="text-lg font-medium">Configuration</h2>
+        <input x-model="icsUrl" placeholder="ICS URL" class="w-full px-3 py-2 rounded-lg border border-slate-300"/>
+
+        <div class="mb-2">
+          <template x-if="!officeConnected">
+            <button @click="connectOffice()" class="px-3 py-2 rounded-lg bg-indigo-600 text-white">Connecter Office 365</button>
+          </template>
+
+          <template x-if="officeConnected">
+            <select x-model="targetCalendarId" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              <option value="">Sélectionnez un calendrier</option>
+              <template x-for="cal in calendars" :key="cal.id">
+                <option :value="cal.id" x-text="cal.name"></option>
+              </template>
+            </select>
+          </template>
+        </div>
+
+        <input x-model="titlePrefix" placeholder="Title Prefix (ex: [CDLL])" class="w-full px-3 py-2 rounded-lg border border-slate-300"/>
+        <div class="flex gap-2">
+          <button @click="saveConfig()" class="px-3 py-2 rounded-lg bg-slate-900 text-white">Save config</button>
+          <button @click="syncNow()" class="px-3 py-2 rounded-lg bg-emerald-600 text-white">Sync now</button>
+        </div>
+        <div x-text="message" class="text-sm text-slate-700"></div>
+      </div>
+    </div>
   </div>
 
-  <!-- CONFIGURATION -->
-  <div x-show="token">
-    <h2>Configuration</h2>
-    <input x-model="icsUrl" placeholder="ICS URL" class="p-1 mb-2 w-full"/>
-    <input x-model="targetCalendarId" placeholder="Target Calendar ID" class="p-1 mb-2 w-full"/>
-    <button @click="saveConfig()" class="p-1 mb-2">Save Config</button>
-    <button @click="syncNow()" class="p-1 mb-2">Sync Now</button>
-    <div x-text="message" class="text-green-600"></div>
-  </div>
-
+  <script src="/public/app.js"></script>
 </body>
-<script src="/public/app.js"></script>
 </html>
