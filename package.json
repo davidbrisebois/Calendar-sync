@@ -6,7 +6,7 @@
     "check": "node --check api/config.js && node --check api/sync.js && node --check api/auth/request.js && node --check api/auth/verify.js && node --check api/setup/status.js && node --check api/setup/init.js && node --check lib/db.js && node --check lib/db-setup.js && node --check public/app.js"
   },
   "dependencies": {
-    "@libsql/client": "^0.6.0",
+    "@libsql/client": "^0.17.2",
     "axios": "^1.6.0",
     "better-sqlite3": "^11.8.1",
     "drizzle-orm": "^0.44.0",
