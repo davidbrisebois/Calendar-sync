@@ -1,94 +1,73 @@
 # Synchroniseur de calendrier
 
-Application Node.js (API Vercel) + UI Alpine.js pour synchroniser un flux ICS vers un calendrier Office 365.
+Application Node.js pour synchroniser un flux ICS vers un calendrier Microsoft 365 (Graph).
 
-## Base de données avec Drizzle (Turso **ou** SQLite locale)
+## Base de données (Turso **ou** SQLite locale)
 
-L'application utilise désormais Drizzle ORM avec deux modes:
+- **SQLite locale (prioritaire)**: `DATABASE_URL` (ex: `./data/app.db`)
+- **Turso/libSQL**: `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
 
-- **Turso/libSQL** (mode cloud):
-  - `TURSO_DATABASE_URL`
-  - `TURSO_AUTH_TOKEN`
-- **SQLite locale** (mode Docker/local):
-  - `DATABASE_URL` (chemin fichier SQLite, ex: `./data/app.db`)
-
-La priorité est donnée à `DATABASE_URL` si elle existe, sinon l'app utilise Turso.
+Si `DATABASE_URL` est présent, l'application crée automatiquement le dossier parent du fichier SQLite.
 
 ## Variables d'environnement principales
 
 - `JWT_SECRET`
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
-- `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` (si mode Turso)
-- `DATABASE_URL` (si mode SQLite locale)
-- `MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `MS_REDIRECT_URI` (OAuth Office/Graph)
-- `MS_ENTRA_OAUTH_BASE_URL` (optionnel, recommandé en single-tenant, ex. `https://login.microsoftonline.com/<TENANT_ID>/oauth2/v2.0`)
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
+- `DATABASE_URL` (mode SQLite)
+- `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` (mode Turso)
+- `MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `MS_REDIRECT_URI`
+- `MS_ENTRA_OAUTH_BASE_URL` (optionnel)
+- `CRON_SECRET` (recommandé pour protéger `/api/cron`)
+- `CRON_SCHEDULE` (optionnel, défaut `*/10 * * * *` dans Docker)
 
-## Schéma SQL
+## Endpoints
 
-Le schéma est dans `db/schema.sql`.
+- `GET/POST /api/setup` : statut et initialisation de la base
+- `GET/POST /api/graph` : état, connexion et calendrier Graph
+- `GET /api/graph/callback` : callback OAuth
+- `GET /api/sync` : synchronisation manuelle utilisateur connecté
+- `GET /api/cron` : synchronisation de tous les calendriers configurés (protégé par `CRON_SECRET` si défini)
 
-> Note: la table `configs` contient `titlePrefix` (ex. `[CDLL]`) pour préfixer le titre des événements synchronisés.
+En cas d'échec de sync lié à un token Graph expiré/perdu, un email d'alerte est envoyé à l'utilisateur.
 
-## Exécuter en local
+## Lancement local
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Vérification rapide
+Vérification rapide:
 
 ```bash
 npm run check
 ```
 
-## Quicklaunch (auto-initialisation)
+## Docker
 
-Au chargement de l'application:
+Build:
 
-- si la DB n'est pas configurée (`DATABASE_URL` ou `TURSO_DATABASE_URL`), une page Quicklaunch l'indique
-- si la DB est joignable mais que les tables sont absentes, la page Quicklaunch propose de créer les tables
-- si tout est prêt, la page de login s'affiche directement
+```bash
+docker build -t calendar-sync .
+```
 
-Endpoints techniques:
+Run:
 
-- `GET /api/setup` (status)
-- `POST /api/setup` (init)
+```bash
+docker run --rm -p 3000:3000 \
+  -e DATABASE_URL=/data/app.db \
+  -e JWT_SECRET=change-me \
+  -e CRON_SECRET=change-me \
+  -e CRON_SCHEDULE="*/10 * * * *" \
+  -v $(pwd)/data:/data \
+  calendar-sync
+```
 
+Le conteneur démarre:
 
-## Office 365 / Graph (connexion + sélection calendrier)
+1. le serveur HTTP (`node server.js`)
+2. un cron interne (`crond`) qui appelle `/api/cron` selon `CRON_SCHEDULE`.
 
-Flux côté UI:
+## Traductions UI
 
-1. Bouton **Connecter Office 365** si aucun token Graph utilisateur n'est enregistré
-2. Redirection OAuth Microsoft, puis retour sur `/`
-3. Chargement d'un dropdown avec `/me/calendars` et sélection du calendrier destination
-
-Endpoints:
-
-- `POST /api/graph` (connect)
-- `GET /api/graph?mode=status`
-- `GET /api/graph?mode=calendars`
-- `GET /api/graph/callback`
-
-Les tokens sont stockés avec refresh token pour prolonger la validité en sync CRON.
-
-
-> `MS_REDIRECT_URI` doit correspondre **exactement** à un Redirect URI déclaré dans Entra.
->
-> Deux options supportées:
-> - `https://.../api/graph/callback` (callback backend direct)
-> - `https://.../` (retour frontend, échange du `code` via `POST /api/graph` avec `action: "exchange"`)
-
-
-## Sync ICS -> Graph (état actuel)
-
-- `Sync now` et `cron` exécutent désormais une synchronisation effective vers Microsoft Graph:
-  - création d'événements absents
-  - mise à jour si l'événement ICS a changé
-  - suppression côté destination si l'événement n'existe plus dans l'ICS
-  - exclusions d'occurrences via `EXDATE` (suppression des instances concernées côté Graph)
-  - préservation des liens web (DESCRIPTION/URL/LOCATION) dans le corps HTML de l'événement Graph
-- Le mapping `events_mapping` est utilisé pour associer `icsUid` <-> `graphEventId`.
-
-> Note: les récurrences `DAILY`, `WEEKLY`, `MONTHLY` (BYMONTHDAY) et `YEARLY` sont gérées; les règles RRULE complexes restent partielles.
+Tous les textes de l'interface passent par un dictionnaire FR/EN dans `public/app.js`.
