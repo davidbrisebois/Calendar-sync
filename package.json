@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
-    "check": "node --check api/config.js && node --check api/sync.js && node --check api/auth/request.js && node --check api/auth/verify.js && node --check api/setup/status.js && node --check api/setup/init.js && node --check lib/db.js && node --check lib/db-setup.js && node --check public/app.js"
+    "check": "node --check api/config.js && node --check api/sync.js && node --check api/auth/request.js && node --check api/auth/verify.js && node --check api/setup/status.js && node --check api/setup/init.js && node --check lib/db.js && node --check lib/db-setup.js && node --check public/app.js && node --check lib/http.js"
   },
   "dependencies": {
     "@libsql/client": "^0.17.2",
