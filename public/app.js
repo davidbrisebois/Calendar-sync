@@ -1,6 +1,32 @@
 function app() {
   const dictionaries = {
     fr: {
+      app_title: "Calendar Sync",
+      lang_fr: "Français",
+      lang_en: "English",
+      logout: "Déconnexion",
+      delete: "Supprimer",
+      quicklaunch_title: "Quicklaunch: initialisation de la base",
+      quicklaunch_missing_tables: "Tables manquantes:",
+      init_tables: "Initialiser les tables",
+      refresh_status: "Rafraîchir statut",
+      login_title: "Connexion",
+      email: "Courriel",
+      send_code: "Envoyer le code",
+      code: "Code",
+      login: "Connexion",
+      configuration: "Configuration",
+      source_calendar: "Calendrier source",
+      ics_url: "URL ICS",
+      loading_calendars: "Chargement des calendriers...",
+      connect_office: "Connecter Office 365",
+      destination_calendar: "Calendrier destination",
+      select_calendar: "Sélectionnez un calendrier",
+      disconnect_office: "Se déconnecter de Microsoft 365",
+      prefix: "Préfixe",
+      title_prefix: "Préfixe du titre",
+      save_config: "Sauvegarder",
+      sync_now: "Synchroniser",
       code_sent: "Code envoyé par courriel.",
       logged_in: "Connecté.",
       office_connected: "Compte Office connecté.",
@@ -16,8 +42,37 @@ function app() {
       connect_office_first: "Connectez d'abord Office 365.",
       syncing: "Synchronisation en cours...",
       deleting_account: "Suppression du compte et des données en cours...",
+      delete_account_confirm: "Supprimer définitivement votre compte ?",
+      oauth_error: "Erreur OAuth",
+      empty_response: "Réponse vide",
     },
     en: {
+      app_title: "Calendar Sync",
+      lang_fr: "French",
+      lang_en: "English",
+      logout: "Log out",
+      delete: "Delete",
+      quicklaunch_title: "Quicklaunch: database setup",
+      quicklaunch_missing_tables: "Missing tables:",
+      init_tables: "Initialize tables",
+      refresh_status: "Refresh status",
+      login_title: "Login",
+      email: "Email",
+      send_code: "Send code",
+      code: "Code",
+      login: "Login",
+      configuration: "Configuration",
+      source_calendar: "Source calendar",
+      ics_url: "ICS URL",
+      loading_calendars: "Loading calendars...",
+      connect_office: "Connect Office 365",
+      destination_calendar: "Destination calendar",
+      select_calendar: "Select a calendar",
+      disconnect_office: "Sign out Microsoft 365",
+      prefix: "Prefix",
+      title_prefix: "Title prefix",
+      save_config: "Save config",
+      sync_now: "Sync now",
       code_sent: "Code sent by email.",
       logged_in: "Logged in.",
       office_connected: "Office account connected.",
@@ -33,6 +88,9 @@ function app() {
       connect_office_first: "Please connect Office 365 first.",
       syncing: "Sync in progress...",
       deleting_account: "Deleting account and data...",
+      delete_account_confirm: "Delete your account permanently?",
+      oauth_error: "OAuth error",
+      empty_response: "Empty response",
     },
   };
 
@@ -80,9 +138,8 @@ function app() {
 
     async parseResponse(res) {
       const raw = await res.text();
-
       if (!raw) {
-        return { error: `Réponse vide (HTTP ${res.status})` };
+        return { error: `${this.t("empty_response")} (HTTP ${res.status})` };
       }
 
       try {
@@ -105,7 +162,7 @@ function app() {
       const oauthError = params.get("error");
 
       if (oauthError) {
-        this.message = `Erreur OAuth: ${oauthError}`;
+        this.message = `${this.t("oauth_error")}: ${oauthError}`;
       }
 
       if (oauthCode && oauthState && this.token) {
@@ -126,11 +183,7 @@ function app() {
           await this.loadCalendars();
         }
 
-        params.delete("code");
-        params.delete("state");
-        params.delete("session_state");
-        params.delete("error");
-        params.delete("error_description");
+        ["code", "state", "session_state", "error", "error_description"].forEach((k) => params.delete(k));
         const nextQuery = params.toString();
         const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`;
         window.history.replaceState({}, "", nextUrl);
@@ -199,11 +252,8 @@ function app() {
           body: JSON.stringify({ email: this.email }),
         });
         const data = await this.parseResponse(res);
-        if (data.error) this.message = data.error;
-        else {
-          this.codeSent = true;
-          this.message = this.t("code_sent");
-        }
+        this.message = data.error || this.t("code_sent");
+        this.codeSent = !data.error;
       } catch (err) {
         this.message = err.message;
       }
@@ -218,14 +268,16 @@ function app() {
           body: JSON.stringify({ email: this.email, code: this.code }),
         });
         const data = await this.parseResponse(res);
-        if (data.error) this.message = data.error;
-        else {
-          this.token = data.token;
-          localStorage.setItem("token", data.token);
-          this.message = this.t("logged_in");
-          this.codeSent = false;
-          await this.loadConfig();
+        if (data.error) {
+          this.message = data.error;
+          return;
         }
+
+        this.token = data.token;
+        localStorage.setItem("token", data.token);
+        this.message = this.t("logged_in");
+        this.codeSent = false;
+        await this.loadConfig();
       } catch (err) {
         this.message = err.message;
       }
@@ -277,7 +329,7 @@ function app() {
     },
 
     async deleteAccount() {
-      const ok = window.confirm(this.lang === "fr" ? "Supprimer définitivement votre compte ?" : "Delete your account permanently?");
+      const ok = window.confirm(this.t("delete_account_confirm"));
       if (!ok) return;
 
       this.message = "";
@@ -317,26 +369,12 @@ function app() {
         }
 
         this.officeConnected = true;
-        this.calendars = (data.calendars || []).map((cal) => ({
-          ...cal,
-          id: String(cal.id),
-        }));
+        this.calendars = (data.calendars || []).map((cal) => ({ ...cal, id: String(cal.id) }));
 
         const preferredId = String(this.configuredTargetCalendarId || this.targetCalendarId || "");
         const hasPreferred = preferredId && this.calendars.some((cal) => cal.id === preferredId);
-        this.targetCalendarId = hasPreferred
-          ? preferredId
-          : this.calendars.length
-            ? this.calendars[0].id
-            : "";
-
+        this.targetCalendarId = hasPreferred ? preferredId : this.calendars[0]?.id || "";
         this.configuredTargetCalendarId = "";
-        this.$nextTick(() => {
-          this.targetCalendarId = String(this.targetCalendarId || "");
-          setTimeout(() => {
-            this.targetCalendarId = String(this.targetCalendarId || "");
-          }, 0);
-        });
       } catch (err) {
         this.officeConnected = false;
         this.calendars = [];
@@ -346,25 +384,8 @@ function app() {
       }
     },
 
-    async loadCalendars() {
-      const res = await fetch("/api/graph?mode=calendars", {
-        headers: { Authorization: this.token },
-      });
-      const data = await this.parseResponse(res);
-
-      if (data.error) {
-        this.officeConnected = false;
-        this.calendars = [];
-        return;
-      }
-
-      this.officeConnected = true;
-      this.calendars = data.calendars || [];
-    },
-
     async loadConfig() {
       this.message = "";
-      this.officeLoading = true;
       try {
         const res = await fetch("/api/config", {
           headers: { Authorization: this.token },
@@ -403,8 +424,7 @@ function app() {
           }),
         });
         const data = await this.parseResponse(res);
-        if (data.error) this.message = data.error;
-        else this.message = this.t("config_saved");
+        this.message = data.error || this.t("config_saved");
       } catch (err) {
         this.message = err.message;
       }
@@ -427,8 +447,9 @@ function app() {
         clearInterval(timer);
         this.syncProgress = 100;
 
-        if (data.error) this.message = data.error;
-        else {
+        if (data.error) {
+          this.message = data.error;
+        } else {
           const stats = data.stats || {};
           this.message = `${this.t("sync_done")} (${stats.processed || 0}/${stats.total || 0})`;
         }
