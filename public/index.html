@@ -5,12 +5,34 @@
   <title>Calendar Sync</title>
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
-<body x-data="app()" class="p-4">
+<body x-data="app()" x-init="boot()" class="p-4">
 
   <h1>Calendar Sync</h1>
 
+  <!-- QUICKLAUNCH -->
+  <div x-show="showQuickLaunch" class="mb-4">
+    <h2>Quicklaunch: initialisation de la base</h2>
+    <p x-text="setupMessage" class="text-red-500"></p>
+
+    <template x-if="missingTables.length">
+      <div>
+        <p>Tables manquantes:</p>
+        <ul>
+          <template x-for="table in missingTables" :key="table">
+            <li x-text="table"></li>
+          </template>
+        </ul>
+      </div>
+    </template>
+
+    <button @click="initializeDatabase()" :disabled="!setupReady" class="p-1 mb-2">
+      Initialiser les tables
+    </button>
+    <button @click="checkSetupStatus()" class="p-1 mb-2">Rafraîchir statut</button>
+  </div>
+
   <!-- LOGIN -->
-  <div x-show="!token" class="mb-4">
+  <div x-show="!showQuickLaunch && !token" class="mb-4">
     <input x-model="email" placeholder="Email" type="email" class="p-1 mb-2"/>
     <button @click="requestCode()" class="p-1 mb-2">Send Code</button>
     <br/>
@@ -20,10 +42,26 @@
   </div>
 
   <!-- CONFIGURATION -->
-  <div x-show="token">
+  <div x-show="!showQuickLaunch && token">
     <h2>Configuration</h2>
     <input x-model="icsUrl" placeholder="ICS URL" class="p-1 mb-2 w-full"/>
-    <input x-model="targetCalendarId" placeholder="Target Calendar ID" class="p-1 mb-2 w-full"/>
+
+    <div class="mb-2">
+      <template x-if="!officeConnected">
+        <button @click="connectOffice()" class="p-1 mb-2">Connecter Office 365</button>
+      </template>
+
+      <template x-if="officeConnected">
+        <select x-model="targetCalendarId" class="p-1 mb-2 w-full">
+          <option value="">Sélectionnez un calendrier</option>
+          <template x-for="cal in calendars" :key="cal.id">
+            <option :value="cal.id" x-text="cal.name"></option>
+          </template>
+        </select>
+      </template>
+    </div>
+
+    <input x-model="titlePrefix" placeholder="Title Prefix (ex: [CDLL])" class="p-1 mb-2 w-full"/>
     <button @click="saveConfig()" class="p-1 mb-2">Save Config</button>
     <button @click="syncNow()" class="p-1 mb-2">Sync Now</button>
     <div x-text="message" class="text-green-600"></div>

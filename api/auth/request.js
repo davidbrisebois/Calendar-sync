@@ -1,4 +1,5 @@
-import { query } from "../../lib/db.js";
+import { db, schema } from "../../lib/db.js";
+import { sendJson, readJsonBody } from "../../lib/http.js";
 import { sendCode } from "../../lib/mailer.js";
 
 function generateCode() {
@@ -6,26 +7,28 @@ function generateCode() {
 }
 
 export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return sendJson(res, 405, { error: "Method not allowed" });
+  }
+
   try {
-    const { email } = req.body;
+    const { email } = await readJsonBody(req);
     if (!email) throw new Error("Email required");
 
     const code = generateCode();
-    const expires = Date.now() + 5 * 60 * 1000;
+    const expiresAt = Date.now() + 5 * 60 * 1000;
 
-    await query("INSERT INTO auth_codes VALUES (?, ?, ?)", [
+    await db.insert(schema.authCodes).values({
       email,
       code,
-      expires,
-    ]);
+      expiresAt,
+    });
 
     await sendCode(email, code);
 
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ ok: true }));
+    return sendJson(res, 200, { ok: true });
   } catch (err) {
     console.error(err);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: err.message }));
+    return sendJson(res, 500, { error: err.message });
   }
 }
