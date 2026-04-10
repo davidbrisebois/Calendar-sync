@@ -12,6 +12,20 @@ function app() {
     showQuickLaunch: true,
     missingTables: [],
 
+    async parseResponse(res) {
+      const raw = await res.text();
+
+      if (!raw) {
+        return { error: `Réponse vide (HTTP ${res.status})` };
+      }
+
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return { error: raw };
+      }
+    },
+
     async boot() {
       await this.checkSetupStatus();
       if (!this.showQuickLaunch && this.token) {
@@ -23,7 +37,7 @@ function app() {
       this.setupMessage = "";
       try {
         const res = await fetch("/api/setup/status");
-        const data = await res.json();
+        const data = await this.parseResponse(res);
 
         if (!data.configured) {
           this.showQuickLaunch = true;
@@ -59,7 +73,7 @@ function app() {
       this.setupMessage = "";
       try {
         const res = await fetch("/api/setup/init", { method: "POST" });
-        const data = await res.json();
+        const data = await this.parseResponse(res);
 
         if (data.error) {
           this.setupMessage = data.error;
@@ -81,7 +95,7 @@ function app() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: this.email }),
         });
-        const data = await res.json();
+        const data = await this.parseResponse(res);
         if (data.error) this.message = data.error;
         else this.message = "Code sent to your email";
       } catch (err) {
@@ -97,7 +111,7 @@ function app() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: this.email, code: this.code }),
         });
-        const data = await res.json();
+        const data = await this.parseResponse(res);
         if (data.error) this.message = data.error;
         else {
           this.token = data.token;
@@ -116,7 +130,7 @@ function app() {
         const res = await fetch("/api/config", {
           headers: { Authorization: this.token },
         });
-        const data = await res.json();
+        const data = await this.parseResponse(res);
         this.icsUrl = data.icsUrl || "";
         this.targetCalendarId = data.targetCalendarId || "";
         this.titlePrefix = data.titlePrefix || "";
@@ -140,7 +154,7 @@ function app() {
             titlePrefix: this.titlePrefix,
           }),
         });
-        const data = await res.json();
+        const data = await this.parseResponse(res);
         if (data.error) this.message = data.error;
         else this.message = "Config saved!";
       } catch (err) {
@@ -154,7 +168,7 @@ function app() {
         const res = await fetch("/api/sync", {
           headers: { Authorization: this.token },
         });
-        const data = await res.json();
+        const data = await this.parseResponse(res);
         if (data.error) this.message = data.error;
         else this.message = "Sync completed!";
       } catch (err) {
