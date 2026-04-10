@@ -15,6 +15,7 @@ function app() {
       sync_done: "Synchronisation terminée.",
       connect_office_first: "Connectez d'abord Office 365.",
       syncing: "Synchronisation en cours...",
+      deleting_account: "Suppression du compte et des données en cours...",
     },
     en: {
       code_sent: "Code sent by email.",
@@ -31,6 +32,7 @@ function app() {
       sync_done: "Sync completed.",
       connect_office_first: "Please connect Office 365 first.",
       syncing: "Sync in progress...",
+      deleting_account: "Deleting account and data...",
     },
   };
 
@@ -42,6 +44,7 @@ function app() {
     token: localStorage.getItem("token") || "",
     icsUrl: "",
     targetCalendarId: "",
+    configuredTargetCalendarId: "",
     titlePrefix: "",
     message: "",
     setupMessage: "",
@@ -53,6 +56,7 @@ function app() {
     calendars: [],
     isSyncing: false,
     syncProgress: 0,
+    isDeleting: false,
 
     t(key) {
       return dictionaries[this.lang]?.[key] || key;
@@ -277,6 +281,7 @@ function app() {
       if (!ok) return;
 
       this.message = "";
+      this.isDeleting = true;
       try {
         const res = await fetch("/api/user", {
           method: "DELETE",
@@ -292,6 +297,8 @@ function app() {
         this.message = this.t("account_deleted");
       } catch (err) {
         this.message = err.message;
+      } finally {
+        this.isDeleting = false;
       }
     },
 
@@ -312,17 +319,19 @@ function app() {
       this.officeConnected = true;
       this.calendars = data.calendars || [];
 
-      if (this.targetCalendarId) {
-        const exists = this.calendars.some((cal) => String(cal.id) === String(this.targetCalendarId));
-        if (!exists && this.calendars.length) {
+      const preferredId = this.configuredTargetCalendarId || this.targetCalendarId;
+      if (preferredId) {
+        const match = this.calendars.find((cal) => String(cal.id) === String(preferredId));
+        if (match) {
+          this.targetCalendarId = match.id;
+        } else if (this.calendars.length) {
           this.targetCalendarId = this.calendars[0].id;
         }
-      }
-
-      if (!this.targetCalendarId && this.calendars.length) {
+      } else if (this.calendars.length) {
         this.targetCalendarId = this.calendars[0].id;
       }
 
+      this.configuredTargetCalendarId = "";
       this.officeLoading = false;
     },
 
@@ -335,7 +344,8 @@ function app() {
         });
         const data = await this.parseResponse(res);
         this.icsUrl = data.icsUrl || "";
-        this.targetCalendarId = data.targetCalendarId || "";
+        this.configuredTargetCalendarId = data.targetCalendarId || "";
+        this.targetCalendarId = this.configuredTargetCalendarId;
         this.titlePrefix = data.titlePrefix || "";
 
         await this.loadCalendars();
