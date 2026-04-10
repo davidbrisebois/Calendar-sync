@@ -333,6 +333,9 @@ function app() {
         this.configuredTargetCalendarId = "";
         this.$nextTick(() => {
           this.targetCalendarId = String(this.targetCalendarId || "");
+          setTimeout(() => {
+            this.targetCalendarId = String(this.targetCalendarId || "");
+          }, 0);
         });
       } catch (err) {
         this.officeConnected = false;

@@ -75,9 +75,9 @@
             <div class="space-y-2">
               <label class="block text-sm font-medium text-slate-700" x-text="lang === 'fr' ? 'Calendrier destination' : 'Destination calendar'"></label>
               <select x-model="targetCalendarId" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
-                <option value="" x-text="lang === 'fr' ? 'Sélectionnez un calendrier' : 'Select a calendar'"></option>
+                <option value="" :selected="!targetCalendarId" x-text="lang === 'fr' ? 'Sélectionnez un calendrier' : 'Select a calendar'"></option>
                 <template x-for="cal in calendars" :key="cal.id">
-                  <option :value="String(cal.id)" x-text="cal.name"></option>
+                  <option :value="String(cal.id)" :selected="String(cal.id) === String(targetCalendarId)" x-text="cal.name"></option>
                 </template>
               </select>
               <button @click="disconnectOffice()" class="px-3 py-2 rounded-lg border border-slate-300" x-text="lang === 'fr' ? 'Se déconnecter de Microsoft 365' : 'Sign out Microsoft 365'"></button>
