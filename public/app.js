@@ -51,7 +51,7 @@ function app() {
     async checkSetupStatus() {
       this.setupMessage = "";
       try {
-        const res = await fetch("/api/setup/status");
+        const res = await fetch("/api/setup");
         const data = await this.parseResponse(res);
 
         if (!data.configured) {
@@ -87,7 +87,7 @@ function app() {
     async initializeDatabase() {
       this.setupMessage = "";
       try {
-        const res = await fetch("/api/setup/init", { method: "POST" });
+        const res = await fetch("/api/setup", { method: "POST" });
         const data = await this.parseResponse(res);
 
         if (data.error) {
@@ -142,7 +142,7 @@ function app() {
     async connectOffice() {
       this.message = "";
       try {
-        const res = await fetch("/api/graph/connect", {
+        const res = await fetch("/api/graph", {
           method: "POST",
           headers: { Authorization: this.token },
         });
@@ -159,7 +159,7 @@ function app() {
     },
 
     async loadCalendars() {
-      const res = await fetch("/api/graph/calendars", {
+      const res = await fetch("/api/graph?mode=calendars", {
         headers: { Authorization: this.token },
       });
       const data = await this.parseResponse(res);

@@ -51,8 +51,8 @@ Au chargement de l'application:
 
 Endpoints techniques:
 
-- `GET /api/setup/status`
-- `POST /api/setup/init`
+- `GET /api/setup` (status)
+- `POST /api/setup` (init)
 
 
 ## Office 365 / Graph (connexion + sélection calendrier)
@@ -65,9 +65,9 @@ Flux côté UI:
 
 Endpoints:
 
-- `POST /api/graph/connect`
+- `POST /api/graph` (connect)
+- `GET /api/graph?mode=status`
+- `GET /api/graph?mode=calendars`
 - `GET /api/graph/callback`
-- `GET /api/graph/status`
-- `GET /api/graph/calendars`
 
 Les tokens sont stockés avec refresh token pour prolonger la validité en sync CRON.
