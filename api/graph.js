@@ -1,6 +1,11 @@
 import { verify, sign } from "../lib/jwt.js";
-import { sendJson } from "../lib/http.js";
-import { buildAuthUrl, getValidAccessToken, listUserCalendars } from "../lib/graph-auth.js";
+import { sendJson, readJsonBody } from "../lib/http.js";
+import {
+  buildAuthUrl,
+  getValidAccessToken,
+  listUserCalendars,
+  persistTokenFromCode,
+} from "../lib/graph-auth.js";
 
 function getUser(req) {
   const token = req.headers.authorization;
@@ -13,6 +18,22 @@ export default async function handler(req, res) {
     if (!user) return sendJson(res, 401, { error: "Unauthorized" });
 
     if (req.method === "POST") {
+      const body = await readJsonBody(req);
+
+      if (body.action === "exchange") {
+        const payload = verify(body.state || "");
+        if (!payload || payload.purpose !== "graph_oauth_state" || payload.userId !== user.id) {
+          return sendJson(res, 400, { error: "Invalid OAuth state" });
+        }
+
+        if (!body.code) {
+          return sendJson(res, 400, { error: "Missing OAuth code" });
+        }
+
+        await persistTokenFromCode(user.id, body.code);
+        return sendJson(res, 200, { ok: true, connected: true });
+      }
+
       const state = sign({ userId: user.id, purpose: "graph_oauth_state" });
       const authUrl = buildAuthUrl(state);
       return sendJson(res, 200, { authUrl });

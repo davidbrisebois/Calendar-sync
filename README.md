@@ -72,3 +72,10 @@ Endpoints:
 - `GET /api/graph/callback`
 
 Les tokens sont stockés avec refresh token pour prolonger la validité en sync CRON.
+
+
+> `MS_REDIRECT_URI` doit correspondre **exactement** à un Redirect URI déclaré dans Entra.
+>
+> Deux options supportées:
+> - `https://.../api/graph/callback` (callback backend direct)
+> - `https://.../` (retour frontend, échange du `code` via `POST /api/graph` avec `action: "exchange"`)

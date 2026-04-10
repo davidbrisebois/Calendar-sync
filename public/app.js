@@ -36,6 +36,46 @@ function app() {
 
       const params = new URLSearchParams(window.location.search);
       const graphStatus = params.get("graph");
+      const oauthCode = params.get("code");
+      const oauthState = params.get("state");
+      const oauthError = params.get("error");
+
+      if (oauthError) {
+        this.message = `Erreur OAuth: ${oauthError}`;
+      }
+
+      if (oauthCode && oauthState && this.token) {
+        const exchangeRes = await fetch("/api/graph", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: this.token,
+          },
+          body: JSON.stringify({
+            action: "exchange",
+            code: oauthCode,
+            state: oauthState,
+          }),
+        });
+        const exchangeData = await this.parseResponse(exchangeRes);
+
+        if (exchangeData.error) {
+          this.message = exchangeData.error;
+        } else {
+          this.message = "Compte Office connecté.";
+          await this.loadCalendars();
+        }
+
+        params.delete("code");
+        params.delete("state");
+        params.delete("session_state");
+        params.delete("error");
+        params.delete("error_description");
+        const nextQuery = params.toString();
+        const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`;
+        window.history.replaceState({}, "", nextUrl);
+      }
+
       if (graphStatus === "connected") {
         this.message = "Compte Office connecté.";
         params.delete("graph");
@@ -134,6 +174,8 @@ function app() {
           this.message = "Logged in!";
           await this.loadConfig();
         }
+
+        window.location.href = data.authUrl;
       } catch (err) {
         this.message = err.message;
       }
