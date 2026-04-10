@@ -21,6 +21,7 @@ La priorité est donnée à `DATABASE_URL` si elle existe, sinon l'app utilise T
 - `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` (si mode Turso)
 - `DATABASE_URL` (si mode SQLite locale)
 - `MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `MS_REDIRECT_URI` (OAuth Office/Graph)
+- `MS_ENTRA_OAUTH_BASE_URL` (optionnel, recommandé en single-tenant, ex. `https://login.microsoftonline.com/<TENANT_ID>/oauth2/v2.0`)
 
 ## Schéma SQL
 
