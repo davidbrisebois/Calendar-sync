@@ -174,6 +174,8 @@ function app() {
           this.message = "Logged in!";
           await this.loadConfig();
         }
+
+        window.location.href = data.authUrl;
       } catch (err) {
         this.message = err.message;
       }
