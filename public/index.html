@@ -45,7 +45,22 @@
   <div x-show="!showQuickLaunch && token">
     <h2>Configuration</h2>
     <input x-model="icsUrl" placeholder="ICS URL" class="p-1 mb-2 w-full"/>
-    <input x-model="targetCalendarId" placeholder="Target Calendar ID" class="p-1 mb-2 w-full"/>
+
+    <div class="mb-2">
+      <template x-if="!officeConnected">
+        <button @click="connectOffice()" class="p-1 mb-2">Connecter Office 365</button>
+      </template>
+
+      <template x-if="officeConnected">
+        <select x-model="targetCalendarId" class="p-1 mb-2 w-full">
+          <option value="">Sélectionnez un calendrier</option>
+          <template x-for="cal in calendars" :key="cal.id">
+            <option :value="cal.id" x-text="cal.name"></option>
+          </template>
+        </select>
+      </template>
+    </div>
+
     <input x-model="titlePrefix" placeholder="Title Prefix (ex: [CDLL])" class="p-1 mb-2 w-full"/>
     <button @click="saveConfig()" class="p-1 mb-2">Save Config</button>
     <button @click="syncNow()" class="p-1 mb-2">Sync Now</button>

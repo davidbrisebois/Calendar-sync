@@ -11,6 +11,8 @@ function app() {
     setupReady: false,
     showQuickLaunch: true,
     missingTables: [],
+    officeConnected: false,
+    calendars: [],
 
     async parseResponse(res) {
       const raw = await res.text();
@@ -30,6 +32,19 @@ function app() {
       await this.checkSetupStatus();
       if (!this.showQuickLaunch && this.token) {
         await this.loadConfig();
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const graphStatus = params.get("graph");
+      if (graphStatus === "connected") {
+        this.message = "Compte Office connecté.";
+        params.delete("graph");
+        const nextQuery = params.toString();
+        const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`;
+        window.history.replaceState({}, "", nextUrl);
+      }
+      if (graphStatus === "error") {
+        this.message = "Erreur pendant la connexion Office 365.";
       }
     },
 
@@ -117,11 +132,46 @@ function app() {
           this.token = data.token;
           localStorage.setItem("token", data.token);
           this.message = "Logged in!";
-          this.loadConfig();
+          await this.loadConfig();
         }
       } catch (err) {
         this.message = err.message;
       }
+    },
+
+    async connectOffice() {
+      this.message = "";
+      try {
+        const res = await fetch("/api/graph/connect", {
+          method: "POST",
+          headers: { Authorization: this.token },
+        });
+        const data = await this.parseResponse(res);
+        if (data.error) {
+          this.message = data.error;
+          return;
+        }
+
+        window.location.href = data.authUrl;
+      } catch (err) {
+        this.message = err.message;
+      }
+    },
+
+    async loadCalendars() {
+      const res = await fetch("/api/graph/calendars", {
+        headers: { Authorization: this.token },
+      });
+      const data = await this.parseResponse(res);
+
+      if (data.error) {
+        this.officeConnected = false;
+        this.calendars = [];
+        return;
+      }
+
+      this.officeConnected = true;
+      this.calendars = data.calendars || [];
     },
 
     async loadConfig() {
@@ -134,6 +184,8 @@ function app() {
         this.icsUrl = data.icsUrl || "";
         this.targetCalendarId = data.targetCalendarId || "";
         this.titlePrefix = data.titlePrefix || "";
+
+        await this.loadCalendars();
       } catch (err) {
         this.message = err.message;
       }
@@ -142,6 +194,11 @@ function app() {
     async saveConfig() {
       this.message = "";
       try {
+        if (!this.officeConnected) {
+          this.message = "Connectez d'abord Office 365.";
+          return;
+        }
+
         const res = await fetch("/api/config", {
           method: "POST",
           headers: {

@@ -26,3 +26,15 @@ CREATE TABLE IF NOT EXISTS events_mapping (
 CREATE INDEX IF NOT EXISTS idx_auth_codes_email_code ON auth_codes(email, code);
 CREATE INDEX IF NOT EXISTS idx_configs_user_id ON configs(userId);
 CREATE INDEX IF NOT EXISTS idx_events_mapping_user_uid ON events_mapping(userId, icsUid);
+
+
+CREATE TABLE IF NOT EXISTS graph_tokens (
+  userId TEXT PRIMARY KEY,
+  accessToken TEXT NOT NULL,
+  refreshToken TEXT,
+  expiresAt INTEGER NOT NULL,
+  scope TEXT,
+  tokenType TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_graph_tokens_expires_at ON graph_tokens(expiresAt);

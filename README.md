@@ -20,6 +20,7 @@ La priorité est donnée à `DATABASE_URL` si elle existe, sinon l'app utilise T
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
 - `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` (si mode Turso)
 - `DATABASE_URL` (si mode SQLite locale)
+- `MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `MS_REDIRECT_URI` (OAuth Office/Graph)
 
 ## Schéma SQL
 
@@ -52,3 +53,21 @@ Endpoints techniques:
 
 - `GET /api/setup/status`
 - `POST /api/setup/init`
+
+
+## Office 365 / Graph (connexion + sélection calendrier)
+
+Flux côté UI:
+
+1. Bouton **Connecter Office 365** si aucun token Graph utilisateur n'est enregistré
+2. Redirection OAuth Microsoft, puis retour sur `/`
+3. Chargement d'un dropdown avec `/me/calendars` et sélection du calendrier destination
+
+Endpoints:
+
+- `POST /api/graph/connect`
+- `GET /api/graph/callback`
+- `GET /api/graph/status`
+- `GET /api/graph/calendars`
+
+Les tokens sont stockés avec refresh token pour prolonger la validité en sync CRON.
