@@ -3,11 +3,10 @@
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
-    "check": "node --check api/config.js && node --check api/sync.js && node --check api/auth/request.js && node --check api/auth/verify.js && node --check api/setup.js && node --check lib/db.js && node --check lib/db-setup.js && node --check public/app.js && node --check lib/http.js && node --check lib/graph-auth.js && node --check api/graph.js && node --check api/graph/callback.js"
+    "check": "node --check api/config.js && node --check api/sync.js && node --check api/auth/request.js && node --check api/auth/verify.js && node --check api/setup.js && node --check lib/db.js && node --check lib/db-setup.js && node --check public/app.js && node --check lib/http.js && node --check lib/graph-auth.js && node --check api/graph.js && node --check api/graph/callback.js && node --check lib/sync.js"
   },
   "dependencies": {
     "@libsql/client": "^0.17.2",
-    "axios": "^1.6.0",
     "better-sqlite3": "^11.8.1",
     "drizzle-orm": "^0.44.0",
     "jsonwebtoken": "^9.0.0",
