@@ -1,4 +1,4 @@
-import { query } from "../../lib/db.js";
+import { db, schema } from "../../lib/db.js";
 import { sendCode } from "../../lib/mailer.js";
 
 function generateCode() {
@@ -11,13 +11,13 @@ export default async function handler(req, res) {
     if (!email) throw new Error("Email required");
 
     const code = generateCode();
-    const expires = Date.now() + 5 * 60 * 1000;
+    const expiresAt = Date.now() + 5 * 60 * 1000;
 
-    await query("INSERT INTO auth_codes VALUES (?, ?, ?)", [
+    await db.insert(schema.authCodes).values({
       email,
       code,
-      expires,
-    ]);
+      expiresAt,
+    });
 
     await sendCode(email, code);
 
