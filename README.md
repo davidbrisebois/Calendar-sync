@@ -88,6 +88,7 @@ Les tokens sont stockés avec refresh token pour prolonger la validité en sync 
   - mise à jour si l'événement ICS a changé
   - suppression côté destination si l'événement n'existe plus dans l'ICS
   - exclusions d'occurrences via `EXDATE` (suppression des instances concernées côté Graph)
+  - préservation des liens web (DESCRIPTION/URL/LOCATION) dans le corps HTML de l'événement Graph
 - Le mapping `events_mapping` est utilisé pour associer `icsUid` <-> `graphEventId`.
 
 > Note: les récurrences `DAILY`, `WEEKLY`, `MONTHLY` (BYMONTHDAY) et `YEARLY` sont gérées; les règles RRULE complexes restent partielles.
