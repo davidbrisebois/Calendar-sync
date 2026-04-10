@@ -1,4 +1,5 @@
-import { query } from "../lib/db.js";
+import { eq } from "drizzle-orm";
+import { db, schema } from "../lib/db.js";
 import { verify } from "../lib/jwt.js";
 import { syncUser } from "../lib/sync.js";
 
@@ -11,16 +12,18 @@ export default async function handler(req, res) {
       return res.end(JSON.stringify({ error: "Unauthorized" }));
     }
 
-    const result = await query("SELECT * FROM configs WHERE userId=?", [
-      user.id,
-    ]);
+    const [config] = await db
+      .select()
+      .from(schema.configs)
+      .where(eq(schema.configs.userId, user.id))
+      .limit(1);
 
-    if (!result.rows[0]) {
+    if (!config) {
       res.writeHead(400, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ error: "No config found" }));
     }
 
-    await syncUser(result.rows[0]);
+    await syncUser(config);
 
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true }));
