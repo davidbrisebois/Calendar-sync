@@ -2,9 +2,72 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calendar Sync</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
+<<<<<<< codex/implement-calendar-synchronization-app-th4oga
+<body class="bg-slate-50 min-h-screen text-slate-800">
+  <div x-data="app()" x-init="boot()" class="max-w-2xl mx-auto p-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-semibold">Calendar Sync</h1>
+        <div class="flex gap-2 items-center">
+          <select x-model="lang" @change="setLang(lang)" class="px-2 py-1 rounded border border-slate-300 text-sm">
+            <option value="fr">Français</option>
+            <option value="en">English</option>
+          </select>
+          <button x-show="token" @click="logout()" class="px-3 py-1 rounded-lg border border-slate-300 text-sm" x-text="lang === 'fr' ? 'Déconnexion' : 'Log out'"></button>
+          <button x-show="token" @click="deleteAccount()" class="px-3 py-1 rounded-lg border border-red-300 text-red-600 text-sm" x-text="lang === 'fr' ? 'Supprimer' : 'Delete'"></button>
+        </div>
+      </div>
+
+      <!-- QUICKLAUNCH -->
+      <div x-show="showQuickLaunch" class="space-y-3">
+        <h2 class="text-lg font-medium" x-text="lang === 'fr' ? 'Quicklaunch: initialisation de la base' : 'Quicklaunch: database setup'"></h2>
+        <p x-text="setupMessage" class="text-sm text-red-600"></p>
+
+        <template x-if="missingTables.length">
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+            <p class="font-medium mb-1" x-text="lang === 'fr' ? 'Tables manquantes:' : 'Missing tables:'"></p>
+            <ul class="list-disc ml-5">
+              <template x-for="table in missingTables" :key="table">
+                <li x-text="table"></li>
+              </template>
+            </ul>
+          </div>
+        </template>
+
+        <div class="flex gap-2">
+          <button @click="initializeDatabase()" :disabled="!setupReady" class="px-3 py-2 rounded-lg bg-slate-900 text-white disabled:opacity-50" x-text="lang === 'fr' ? 'Initialiser les tables' : 'Initialize tables'"></button>
+          <button @click="checkSetupStatus()" class="px-3 py-2 rounded-lg border border-slate-300 bg-white" x-text="lang === 'fr' ? 'Rafraîchir statut' : 'Refresh status'"></button>
+        </div>
+      </div>
+
+      <!-- LOGIN -->
+      <div x-show="!showQuickLaunch && !token" class="space-y-3">
+        <h2 class="text-lg font-medium" x-text="lang === 'fr' ? 'Connexion' : 'Login'"></h2>
+        <input x-model="email" :placeholder="lang === 'fr' ? 'Courriel' : 'Email'" type="email" class="w-full px-3 py-2 rounded-lg border border-slate-300"/>
+        <button @click="requestCode()" class="px-3 py-2 rounded-lg bg-slate-900 text-white" x-text="lang === 'fr' ? 'Envoyer le code' : 'Send code'"></button>
+
+        <div x-show="codeSent" class="space-y-3">
+          <input x-model="code" :placeholder="lang === 'fr' ? 'Code' : 'Code'" class="w-full px-3 py-2 rounded-lg border border-slate-300"/>
+          <button @click="login()" class="px-3 py-2 rounded-lg bg-emerald-600 text-white" x-text="lang === 'fr' ? 'Connexion' : 'Login'"></button>
+        </div>
+
+        <div x-text="message" class="text-sm text-red-600"></div>
+      </div>
+
+      <!-- CONFIGURATION -->
+      <div x-show="!showQuickLaunch && token" class="space-y-3">
+        <h2 class="text-lg font-medium" x-text="lang === 'fr' ? 'Configuration' : 'Configuration'"></h2>
+        <label class="block text-sm font-medium text-slate-700" x-text="lang === 'fr' ? 'Calendrier source' : 'Source calendar'"></label>
+        <input x-model="icsUrl" :placeholder="lang === 'fr' ? 'URL ICS' : 'ICS URL'" class="w-full px-3 py-2 rounded-lg border border-slate-300"/>
+
+        <div class="space-y-2">
+          <div x-show="officeLoading" class="text-sm text-slate-500" x-text="lang === 'fr' ? 'Chargement des calendriers...' : 'Loading calendars...'"></div>
+=======
 <body x-data="app()" x-init="boot()" class="p-4">
 
   <h1>Calendar Sync</h1>
@@ -66,7 +129,62 @@
     <button @click="syncNow()" class="p-1 mb-2">Sync Now</button>
     <div x-text="message" class="text-green-600"></div>
   </div>
+>>>>>>> main
 
+          <template x-if="!officeConnected && !officeLoading">
+            <button @click="connectOffice()" class="px-3 py-2 rounded-lg bg-indigo-600 text-white" x-text="lang === 'fr' ? 'Connecter Office 365' : 'Connect Office 365'"></button>
+          </template>
+
+          <template x-if="officeConnected">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700" x-text="lang === 'fr' ? 'Calendrier destination' : 'Destination calendar'"></label>
+              <select x-model="targetCalendarId" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                <option value="" :selected="!targetCalendarId" x-text="lang === 'fr' ? 'Sélectionnez un calendrier' : 'Select a calendar'"></option>
+                <template x-for="cal in calendars" :key="cal.id">
+                  <option :value="String(cal.id)" :selected="String(cal.id) === String(targetCalendarId)" x-text="cal.name"></option>
+                </template>
+              </select>
+              <button @click="disconnectOffice()" class="px-3 py-2 rounded-lg border border-slate-300" x-text="lang === 'fr' ? 'Se déconnecter de Microsoft 365' : 'Sign out Microsoft 365'"></button>
+            </div>
+          </template>
+        </div>
+
+        <label class="block text-sm font-medium text-slate-700" x-text="lang === 'fr' ? 'Préfixe' : 'Prefix'"></label>
+        <input x-model="titlePrefix" :placeholder="lang === 'fr' ? 'Préfixe du titre' : 'Title prefix'" class="w-full px-3 py-2 rounded-lg border border-slate-300"/>
+
+        <div class="flex gap-2">
+          <button @click="saveConfig()" class="px-3 py-2 rounded-lg bg-slate-900 text-white" x-text="lang === 'fr' ? 'Sauvegarder' : 'Save config'"></button>
+          <button @click="syncNow()" :disabled="isSyncing" class="px-3 py-2 rounded-lg bg-emerald-600 text-white disabled:opacity-50" x-text="lang === 'fr' ? 'Synchroniser' : 'Sync now'"></button>
+        </div>
+
+        <div x-show="isSyncing" class="space-y-2">
+          <div class="flex items-center gap-2 text-sm text-slate-600">
+            <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a10 10 0 00-10 10h2z"></path></svg>
+            <span x-text="t('syncing')"></span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+            <div class="bg-emerald-500 h-2 transition-all" :style="`width: ${syncProgress}%`"></div>
+          </div>
+        </div>
+
+        <div x-text="message" class="text-sm text-slate-700"></div>
+      </div>
+    </div>
+
+      
+
+      <div x-show="isDeleting" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-xl p-6 flex items-center gap-3">
+          <svg class="animate-spin h-6 w-6 text-slate-700" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a10 10 0 00-10 10h2z"></path></svg>
+          <span class="text-sm font-medium" x-text="t('deleting_account')"></span>
+        </div>
+      </div>
+
+    <script src="/public/app.js"></script>
+  </div>
 </body>
+<<<<<<< codex/implement-calendar-synchronization-app-th4oga
+=======
 <script src="/public/app.js"></script>
+>>>>>>> main
 </html>

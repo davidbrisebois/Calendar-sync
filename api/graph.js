@@ -1,3 +1,5 @@
+import { eq } from "drizzle-orm";
+import { db, schema } from "../lib/db.js";
 import { verify, sign } from "../lib/jwt.js";
 import { sendJson, readJsonBody } from "../lib/http.js";
 import {
@@ -19,6 +21,11 @@ export default async function handler(req, res) {
 
     if (req.method === "POST") {
       const body = await readJsonBody(req);
+
+      if (body.action === "disconnect") {
+        await db.delete(schema.graphTokens).where(eq(schema.graphTokens.userId, user.id));
+        return sendJson(res, 200, { ok: true, connected: false });
+      }
 
       if (body.action === "exchange") {
         const payload = verify(body.state || "");
