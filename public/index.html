@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
+<<<<<<< codex/implement-calendar-synchronization-app-th4oga
 <body class="bg-slate-50 min-h-screen text-slate-800">
   <div x-data="app()" x-init="boot()" class="max-w-2xl mx-auto p-6">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
@@ -66,6 +67,69 @@
 
         <div class="space-y-2">
           <div x-show="officeLoading" class="text-sm text-slate-500" x-text="lang === 'fr' ? 'Chargement des calendriers...' : 'Loading calendars...'"></div>
+=======
+<body x-data="app()" x-init="boot()" class="p-4">
+
+  <h1>Calendar Sync</h1>
+
+  <!-- QUICKLAUNCH -->
+  <div x-show="showQuickLaunch" class="mb-4">
+    <h2>Quicklaunch: initialisation de la base</h2>
+    <p x-text="setupMessage" class="text-red-500"></p>
+
+    <template x-if="missingTables.length">
+      <div>
+        <p>Tables manquantes:</p>
+        <ul>
+          <template x-for="table in missingTables" :key="table">
+            <li x-text="table"></li>
+          </template>
+        </ul>
+      </div>
+    </template>
+
+    <button @click="initializeDatabase()" :disabled="!setupReady" class="p-1 mb-2">
+      Initialiser les tables
+    </button>
+    <button @click="checkSetupStatus()" class="p-1 mb-2">Rafraîchir statut</button>
+  </div>
+
+  <!-- LOGIN -->
+  <div x-show="!showQuickLaunch && !token" class="mb-4">
+    <input x-model="email" placeholder="Email" type="email" class="p-1 mb-2"/>
+    <button @click="requestCode()" class="p-1 mb-2">Send Code</button>
+    <br/>
+    <input x-model="code" placeholder="Code" class="p-1 mb-2"/>
+    <button @click="login()" class="p-1 mb-2">Login</button>
+    <div x-text="message" class="text-red-500"></div>
+  </div>
+
+  <!-- CONFIGURATION -->
+  <div x-show="!showQuickLaunch && token">
+    <h2>Configuration</h2>
+    <input x-model="icsUrl" placeholder="ICS URL" class="p-1 mb-2 w-full"/>
+
+    <div class="mb-2">
+      <template x-if="!officeConnected">
+        <button @click="connectOffice()" class="p-1 mb-2">Connecter Office 365</button>
+      </template>
+
+      <template x-if="officeConnected">
+        <select x-model="targetCalendarId" class="p-1 mb-2 w-full">
+          <option value="">Sélectionnez un calendrier</option>
+          <template x-for="cal in calendars" :key="cal.id">
+            <option :value="cal.id" x-text="cal.name"></option>
+          </template>
+        </select>
+      </template>
+    </div>
+
+    <input x-model="titlePrefix" placeholder="Title Prefix (ex: [CDLL])" class="p-1 mb-2 w-full"/>
+    <button @click="saveConfig()" class="p-1 mb-2">Save Config</button>
+    <button @click="syncNow()" class="p-1 mb-2">Sync Now</button>
+    <div x-text="message" class="text-green-600"></div>
+  </div>
+>>>>>>> main
 
           <template x-if="!officeConnected && !officeLoading">
             <button @click="connectOffice()" class="px-3 py-2 rounded-lg bg-indigo-600 text-white" x-text="lang === 'fr' ? 'Connecter Office 365' : 'Connect Office 365'"></button>
@@ -119,4 +183,8 @@
     <script src="/public/app.js"></script>
   </div>
 </body>
+<<<<<<< codex/implement-calendar-synchronization-app-th4oga
+=======
+<script src="/public/app.js"></script>
+>>>>>>> main
 </html>

@@ -23,7 +23,11 @@ export default async function handler(req, res) {
       return res.end(JSON.stringify({ error: "No config found" }));
     }
 
+<<<<<<< codex/implement-calendar-synchronization-app-th4oga
     const stats = await syncUser(config);
+=======
+    await syncUser(config);
+>>>>>>> main
 
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true, stats }));

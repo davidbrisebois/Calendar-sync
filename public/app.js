@@ -346,6 +346,22 @@ function app() {
       }
     },
 
+    async loadCalendars() {
+      const res = await fetch("/api/graph?mode=calendars", {
+        headers: { Authorization: this.token },
+      });
+      const data = await this.parseResponse(res);
+
+      if (data.error) {
+        this.officeConnected = false;
+        this.calendars = [];
+        return;
+      }
+
+      this.officeConnected = true;
+      this.calendars = data.calendars || [];
+    },
+
     async loadConfig() {
       this.message = "";
       this.officeLoading = true;
