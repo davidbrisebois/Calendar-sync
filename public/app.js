@@ -1,4 +1,7 @@
 function app() {
+  const initialLangRaw = localStorage.getItem("lang") || "fr";
+  const initialLang = initialLangRaw.startsWith("en") ? "en" : "fr";
+
   const dictionaries = {
     fr: {
       app_title: "Calendar Sync",
@@ -117,7 +120,7 @@ function app() {
   };
 
   return {
-    lang: localStorage.getItem("lang") || "fr",
+    lang: initialLang,
     email: "",
     code: "",
     codeSent: false,
@@ -141,12 +144,13 @@ function app() {
     syncLogsFetchedAt: 0,
 
     t(key) {
-      return dictionaries[this.lang]?.[key] || key;
+      const safeLang = this.lang?.startsWith("en") ? "en" : "fr";
+      return dictionaries[safeLang]?.[key] || key;
     },
 
     setLang(nextLang) {
-      this.lang = nextLang;
-      localStorage.setItem("lang", nextLang);
+      this.lang = nextLang?.startsWith("en") ? "en" : "fr";
+      localStorage.setItem("lang", this.lang);
     },
 
     formatSyncDate(value) {

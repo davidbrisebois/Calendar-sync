@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db, schema } from "../lib/db.js";
 import { verify } from "../lib/jwt.js";
-import { getRecentSyncLogs } from "../lib/sync-log.js";
+import { getRecentSyncLogsByIdentity } from "../lib/sync-log.js";
 
 export default async function handler(req, res) {
   try {
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
         .from(schema.configs)
         .where(eq(schema.configs.userId, user.id))
         .limit(1);
-      const syncLogs = await getRecentSyncLogs(user.id);
+      const syncLogs = await getRecentSyncLogsByIdentity({ userId: user.id, email: user.email });
 
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({
