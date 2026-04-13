@@ -158,6 +158,11 @@ function app() {
       return new Date(Number(value)).toLocaleString(this.lang === "fr" ? "fr-FR" : "en-US");
     },
 
+    formatSyncDate(value) {
+      if (!value) return "";
+      return new Date(Number(value)).toLocaleString(this.lang === "fr" ? "fr-FR" : "en-US");
+    },
+
     logout() {
       this.token = "";
       this.code = "";
