@@ -1,73 +1,50 @@
-# Synchroniseur de calendrier
+# Calendar Sync (ICS ➜ Microsoft 365)
 
-Application Node.js pour synchroniser un flux ICS vers un calendrier Microsoft 365 (Graph).
+Cette application vous permet de synchroniser un calendrier ICS vers votre calendrier Microsoft 365.
 
-## Base de données (Turso **ou** SQLite locale)
+## Ce que vous pouvez faire
 
-- **SQLite locale (prioritaire)**: `DATABASE_URL` (ex: `./data/app.db`)
-- **Turso/libSQL**: `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
+- Connecter votre compte Microsoft 365.
+- Ajouter l'URL de votre calendrier ICS.
+- Choisir le calendrier Microsoft de destination.
+- Lancer une synchronisation manuelle.
+- Consulter les dernières synchronisations (date/heure, succès/échec) dans l'écran de configuration.
 
-Si `DATABASE_URL` est présent, l'application crée automatiquement le dossier parent du fichier SQLite.
+## Prérequis
 
-## Variables d'environnement principales
+Votre administrateur (ou la personne qui déploie l'application) doit configurer les variables d'environnement suivantes :
 
 - `JWT_SECRET`
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
-- `DATABASE_URL` (mode SQLite)
-- `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` (mode Turso)
-- `MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `MS_REDIRECT_URI`
-- `MS_ENTRA_OAUTH_BASE_URL` (optionnel)
-- `CRON_SECRET` (recommandé pour protéger `/api/cron`)
-- `CRON_SCHEDULE` (optionnel, défaut `*/10 * * * *` dans Docker)
+- Base de données (au choix) :
+  - `DATABASE_URL` (SQLite locale)
+  - ou `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
+- Microsoft 365 / Graph :
+  - `MS_CLIENT_ID`
+  - `MS_CLIENT_SECRET`
+  - `MS_REDIRECT_URI`
+  - `MS_ENTRA_OAUTH_BASE_URL` (optionnel)
+- Cron (recommandé) :
+  - `CRON_SECRET`
+  - `CRON_SCHEDULE` (optionnel, défaut : `*/10 * * * *` en Docker)
 
-## Endpoints
+## Démarrage
 
-- `GET/POST /api/setup` : statut et initialisation de la base
-- `GET/POST /api/graph` : état, connexion et calendrier Graph
-- `GET /api/graph/callback` : callback OAuth
-- `GET /api/sync` : synchronisation manuelle utilisateur connecté
-- `GET /api/cron` : synchronisation de tous les calendriers configurés (protégé par `CRON_SECRET` si défini)
+1. Ouvrez l'application dans votre navigateur.
+2. Connectez-vous par code reçu par email.
+3. Dans **Configuration** :
+   - renseignez l'URL ICS,
+   - connectez Microsoft 365,
+   - choisissez le calendrier de destination,
+   - sauvegardez.
+4. Cliquez sur **Synchroniser** pour lancer une première synchronisation.
 
-En cas d'échec de sync lié à un token Graph expiré/perdu, un email d'alerte est envoyé à l'utilisateur.
+## Synchronisations automatiques
 
-## Lancement local
+Si le cron est activé côté serveur, la synchronisation se lance automatiquement selon la planification configurée.
 
-```bash
-npm install
-npm run dev
-```
+## Dépannage rapide
 
-Vérification rapide:
-
-```bash
-npm run check
-```
-
-## Docker
-
-Build:
-
-```bash
-docker build -t calendar-sync .
-```
-
-Run:
-
-```bash
-docker run --rm -p 3000:3000 \
-  -e DATABASE_URL=/data/app.db \
-  -e JWT_SECRET=change-me \
-  -e CRON_SECRET=change-me \
-  -e CRON_SCHEDULE="*/10 * * * *" \
-  -v $(pwd)/data:/data \
-  calendar-sync
-```
-
-Le conteneur démarre:
-
-1. le serveur HTTP (`node server.js`)
-2. un cron interne (`crond`) qui appelle `/api/cron` selon `CRON_SCHEDULE`.
-
-## Traductions UI
-
-Tous les textes de l'interface passent par un dictionnaire FR/EN dans `public/app.js`.
+- **"No config found"** : la configuration n'a pas encore été sauvegardée.
+- **Erreur de connexion Microsoft 365** : reconnectez votre compte Office 365 dans l'application.
+- **Erreur base de données non configurée** : contactez l'administrateur pour vérifier les variables d'environnement.

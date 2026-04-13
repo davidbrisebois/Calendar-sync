@@ -27,6 +27,16 @@ function app() {
       title_prefix: "Préfixe du titre",
       save_config: "Sauvegarder",
       sync_now: "Synchroniser",
+      recent_syncs: "Dernières synchronisations",
+      sync_date: "Date",
+      sync_status: "Statut",
+      sync_trigger: "Déclenchement",
+      sync_details: "Détails",
+      status_success: "Réussie",
+      status_failed: "Échec",
+      trigger_manual: "Manuel",
+      trigger_cron: "Automatique (cron)",
+      no_sync_logs: "Aucune synchronisation enregistrée.",
       code_sent: "Code envoyé par courriel.",
       logged_in: "Connecté.",
       office_connected: "Compte Office connecté.",
@@ -73,6 +83,16 @@ function app() {
       title_prefix: "Title prefix",
       save_config: "Save config",
       sync_now: "Sync now",
+      recent_syncs: "Recent synchronizations",
+      sync_date: "Date",
+      sync_status: "Status",
+      sync_trigger: "Trigger",
+      sync_details: "Details",
+      status_success: "Success",
+      status_failed: "Failed",
+      trigger_manual: "Manual",
+      trigger_cron: "Automatic (cron)",
+      no_sync_logs: "No synchronization recorded yet.",
       code_sent: "Code sent by email.",
       logged_in: "Logged in.",
       office_connected: "Office account connected.",
@@ -115,6 +135,7 @@ function app() {
     isSyncing: false,
     syncProgress: 0,
     isDeleting: false,
+    syncLogs: [],
 
     t(key) {
       return dictionaries[this.lang]?.[key] || key;
@@ -123,6 +144,11 @@ function app() {
     setLang(nextLang) {
       this.lang = nextLang;
       localStorage.setItem("lang", nextLang);
+    },
+
+    formatSyncDate(value) {
+      if (!value) return "";
+      return new Date(Number(value)).toLocaleString(this.lang === "fr" ? "fr-FR" : "en-US");
     },
 
     logout() {
@@ -134,6 +160,7 @@ function app() {
       this.calendars = [];
       localStorage.removeItem("token");
       this.message = "";
+      this.syncLogs = [];
     },
 
     async parseResponse(res) {
@@ -395,6 +422,7 @@ function app() {
         this.configuredTargetCalendarId = data.targetCalendarId ? String(data.targetCalendarId) : "";
         this.targetCalendarId = this.configuredTargetCalendarId;
         this.titlePrefix = data.titlePrefix || "";
+        this.syncLogs = data.syncLogs || [];
 
         await this.loadCalendars();
       } catch (err) {
@@ -453,6 +481,7 @@ function app() {
           const stats = data.stats || {};
           this.message = `${this.t("sync_done")} (${stats.processed || 0}/${stats.total || 0})`;
         }
+        await this.loadConfig();
       } catch (err) {
         clearInterval(timer);
         this.message = err.message;
