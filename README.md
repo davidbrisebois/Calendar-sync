@@ -1,50 +1,50 @@
 # Calendar Sync (ICS ➜ Microsoft 365)
 
-Cette application vous permet de synchroniser un calendrier ICS vers votre calendrier Microsoft 365.
+This app lets you sync an ICS calendar feed to your Microsoft 365 calendar.
 
-## Ce que vous pouvez faire
+## What you can do
 
-- Connecter votre compte Microsoft 365.
-- Ajouter l'URL de votre calendrier ICS.
-- Choisir le calendrier Microsoft de destination.
-- Lancer une synchronisation manuelle.
-- Consulter les dernières synchronisations (date/heure, succès/échec) dans l'écran de configuration.
+- Connect your Microsoft 365 account.
+- Add your ICS calendar URL.
+- Choose the destination Microsoft calendar.
+- Run a manual synchronization.
+- View recent synchronizations (date/time, success/failure) from the Configuration screen.
 
-## Prérequis
+## Requirements
 
-Votre administrateur (ou la personne qui déploie l'application) doit configurer les variables d'environnement suivantes :
+Your administrator (or the person deploying the app) must configure these environment variables:
 
 - `JWT_SECRET`
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
-- Base de données (au choix) :
-  - `DATABASE_URL` (SQLite locale)
-  - ou `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
-- Microsoft 365 / Graph :
+- Database (choose one):
+  - `DATABASE_URL` (local SQLite)
+  - or `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
+- Microsoft 365 / Graph:
   - `MS_CLIENT_ID`
   - `MS_CLIENT_SECRET`
   - `MS_REDIRECT_URI`
-  - `MS_ENTRA_OAUTH_BASE_URL` (optionnel)
-- Cron (recommandé) :
+  - `MS_ENTRA_OAUTH_BASE_URL` (optional)
+- Cron (recommended):
   - `CRON_SECRET`
-  - `CRON_SCHEDULE` (optionnel, défaut : `*/10 * * * *` en Docker)
+  - `CRON_SCHEDULE` (optional, default: `*/10 * * * *` in Docker)
 
-## Démarrage
+## Getting started
 
-1. Ouvrez l'application dans votre navigateur.
-2. Connectez-vous par code reçu par email.
-3. Dans **Configuration** :
-   - renseignez l'URL ICS,
-   - connectez Microsoft 365,
-   - choisissez le calendrier de destination,
-   - sauvegardez.
-4. Cliquez sur **Synchroniser** pour lancer une première synchronisation.
+1. Open the app in your browser.
+2. Sign in with the code received by email.
+3. In **Configuration**:
+   - enter the ICS URL,
+   - connect Microsoft 365,
+   - choose the destination calendar,
+   - save your settings.
+4. Click **Sync now** to run your first synchronization.
 
-## Synchronisations automatiques
+## Automatic synchronization
 
-Si le cron est activé côté serveur, la synchronisation se lance automatiquement selon la planification configurée.
+If cron is enabled on the server, synchronization runs automatically based on the configured schedule.
 
-## Dépannage rapide
+## Quick troubleshooting
 
-- **"No config found"** : la configuration n'a pas encore été sauvegardée.
-- **Erreur de connexion Microsoft 365** : reconnectez votre compte Office 365 dans l'application.
-- **Erreur base de données non configurée** : contactez l'administrateur pour vérifier les variables d'environnement.
+- **"No config found"**: the configuration has not been saved yet.
+- **Microsoft 365 connection error**: reconnect your Office 365 account in the app.
+- **Database not configured error**: contact your administrator to verify environment variables.
