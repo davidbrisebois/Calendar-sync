@@ -105,6 +105,9 @@
 
         <div class="pt-2 border-t border-slate-200 space-y-2">
           <h3 class="text-base font-medium" x-text="t('recent_syncs')"></h3>
+          <p x-show="syncLogsFetchedAt" class="text-xs text-slate-500">
+            <span x-text="`${t('sync_last_refresh')}: ${formatSyncDate(syncLogsFetchedAt)}`"></span>
+          </p>
           <template x-if="syncLogs.length === 0">
             <p class="text-sm text-slate-500" x-text="t('no_sync_logs')"></p>
           </template>

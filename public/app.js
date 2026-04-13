@@ -1,4 +1,7 @@
 function app() {
+  const initialLangRaw = localStorage.getItem("lang") || "fr";
+  const initialLang = initialLangRaw.startsWith("en") ? "en" : "fr";
+
   const dictionaries = {
     fr: {
       app_title: "Calendar Sync",
@@ -37,6 +40,7 @@ function app() {
       trigger_manual: "Manuel",
       trigger_cron: "Automatique (cron)",
       no_sync_logs: "Aucune synchronisation enregistrée.",
+      sync_last_refresh: "Dernière actualisation",
       code_sent: "Code envoyé par courriel.",
       logged_in: "Connecté.",
       office_connected: "Compte Office connecté.",
@@ -93,6 +97,7 @@ function app() {
       trigger_manual: "Manual",
       trigger_cron: "Automatic (cron)",
       no_sync_logs: "No synchronization recorded yet.",
+      sync_last_refresh: "Last refresh",
       code_sent: "Code sent by email.",
       logged_in: "Logged in.",
       office_connected: "Office account connected.",
@@ -115,7 +120,7 @@ function app() {
   };
 
   return {
-    lang: localStorage.getItem("lang") || "fr",
+    lang: initialLang,
     email: "",
     code: "",
     codeSent: false,
@@ -136,14 +141,21 @@ function app() {
     syncProgress: 0,
     isDeleting: false,
     syncLogs: [],
+    syncLogsFetchedAt: 0,
 
     t(key) {
-      return dictionaries[this.lang]?.[key] || key;
+      const safeLang = this.lang?.startsWith("en") ? "en" : "fr";
+      return dictionaries[safeLang]?.[key] || key;
     },
 
     setLang(nextLang) {
-      this.lang = nextLang;
-      localStorage.setItem("lang", nextLang);
+      this.lang = nextLang?.startsWith("en") ? "en" : "fr";
+      localStorage.setItem("lang", this.lang);
+    },
+
+    formatSyncDate(value) {
+      if (!value) return "";
+      return new Date(Number(value)).toLocaleString(this.lang === "fr" ? "fr-FR" : "en-US");
     },
 
     formatSyncDate(value) {
@@ -161,6 +173,7 @@ function app() {
       localStorage.removeItem("token");
       this.message = "";
       this.syncLogs = [];
+      this.syncLogsFetchedAt = 0;
     },
 
     async parseResponse(res) {
@@ -423,6 +436,7 @@ function app() {
         this.targetCalendarId = this.configuredTargetCalendarId;
         this.titlePrefix = data.titlePrefix || "";
         this.syncLogs = data.syncLogs || [];
+        this.syncLogsFetchedAt = Date.now();
 
         await this.loadCalendars();
       } catch (err) {
