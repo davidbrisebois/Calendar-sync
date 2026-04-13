@@ -38,3 +38,14 @@ CREATE TABLE IF NOT EXISTS graph_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS idx_graph_tokens_expires_at ON graph_tokens(expiresAt);
+
+CREATE TABLE IF NOT EXISTS sync_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  userId TEXT NOT NULL,
+  syncedAt INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  trigger TEXT NOT NULL,
+  details TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_sync_logs_user_synced_at ON sync_logs(userId, syncedAt DESC);

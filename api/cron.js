@@ -3,6 +3,7 @@ import { db, schema } from "../lib/db.js";
 import { syncUser } from "../lib/sync.js";
 import { sendGraphConnectionLostEmail } from "../lib/mailer.js";
 import { sendJson } from "../lib/http.js";
+import { addSyncLog } from "../lib/sync-log.js";
 
 function isCronAuthorized(req) {
   const expected = process.env.CRON_SECRET;
@@ -32,10 +33,22 @@ export default async function handler(req, res) {
 
     for (const config of allConfigs) {
       try {
-        await syncUser(config);
+        const result = await syncUser(config);
         stats.success += 1;
+        await addSyncLog({
+          userId: config.userId,
+          status: "success",
+          trigger: "cron",
+          details: `processed=${result.processed || 0};total=${result.total || 0}`,
+        });
       } catch (err) {
         stats.failed += 1;
+        await addSyncLog({
+          userId: config.userId,
+          status: "failed",
+          trigger: "cron",
+          details: err.message,
+        });
 
         if (graphConnectionLost(err)) {
           const [user] = await db.select().from(schema.users).where(eq(schema.users.id, config.userId)).limit(1);
