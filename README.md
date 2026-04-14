@@ -48,3 +48,16 @@ If cron is enabled on the server, synchronization runs automatically based on th
 - **"No config found"**: the configuration has not been saved yet.
 - **Microsoft 365 connection error**: reconnect your Office 365 account in the app.
 - **Database not configured error**: contact your administrator to verify environment variables.
+
+## AI assistance notice
+
+This application was initially generated with assistance from **ChatGPT Codex**.
+
+Before any production use, maintainers are responsible for:
+
+- Performing a full human code review (logic, architecture, dependencies, and licenses).
+- Running security validation (authentication, authorization, secret handling, data exposure, and logging).
+- Confirming legal/compliance requirements applicable to their context (privacy, data retention, and regulatory constraints).
+- Adding and maintaining automated tests, observability, and incident response procedures.
+
+AI-generated output may contain errors or omissions. Final validation and operational responsibility remain with the deploying team.
